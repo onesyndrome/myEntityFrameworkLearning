@@ -8,10 +8,35 @@ using System.Web.Routing;
 
 namespace WebAppIdentity
 {
+    using System.Reflection;
+    using Microsoft.AspNet.Identity;
+    using Microsoft.AspNet.Identity.EntityFramework;
+    using Microsoft.Owin.Security;
+    using Models;
+    using SimpleInjector;
+    using SimpleInjector.Integration.Web;
+
     public class MvcApplication : System.Web.HttpApplication
     {
+
         protected void Application_Start()
         {
+            // Create the container as usual.
+            var container = new Container();
+            container.Options.DefaultScopedLifestyle = new WebRequestLifestyle();
+
+            // Register your types, for instance:
+            container.Register<IAuthenticationManager>(() => HttpContext.Current.GetOwinContext().Authentication, Lifestyle.Scoped);
+            container.Register<IUserStore<ApplicationUser>>(() => new UserStore<ApplicationUser>(container.GetInstance<ApplicationDbContext>()), Lifestyle.Scoped);
+            container.Register<ApplicationUserManager>(Lifestyle.Scoped);
+            container.Register<ApplicationSignInManager>(Lifestyle.Scoped);
+
+
+            // This is an extension method from the integration package.
+            container.RegisterMvcControllers(Assembly.GetExecutingAssembly());
+
+            //container.Verify();
+
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
